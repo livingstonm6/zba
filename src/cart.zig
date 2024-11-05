@@ -24,35 +24,24 @@ pub const Cart = struct {
     }
 
     fn loadRom(self: *Cart, filename: []const u8) !void {
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        defer arena.deinit();
-        const allocator = arena.allocator();
-
-        var list = std.ArrayList(u8).init(allocator);
-        defer list.deinit();
-
         const file = try std.fs.cwd().openFile(filename, .{});
         defer file.close();
+
+        const file_size = try file.getEndPos();
 
         var buffered_file = std.io.bufferedReader(file.reader());
         var buffer: [1]u8 = undefined;
 
-        while (true) {
+        self.data = try self.allocator.alloc(u8, file_size);
+
+        for (0..file_size) |i| {
             const num_bytes_read = try buffered_file.read(&buffer);
 
             if (num_bytes_read == 0) {
                 break;
             }
 
-            try list.append(buffer[0]);
-        }
-
-        // TODO Fix this so we only iterate once, need file size before reading whole file
-
-        std.log.debug("bytes: {}", .{list.items.len});
-        self.data = try self.allocator.alloc(u8, list.items.len);
-        for (0..list.items.len) |i| {
-            self.data[i] = list.items[i];
+            self.data[i] = buffer[0];
         }
     }
 
