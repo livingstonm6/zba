@@ -1,27 +1,8 @@
 const std = @import("std");
 
-pub const Cart = struct {
+const Cart = struct {
     allocator: std.mem.Allocator,
     data: []u8 = undefined,
-
-    pub fn init(self: *Cart) !void {
-        const stdin = std.io.getStdIn().reader();
-        const stdout = std.io.getStdOut().writer();
-
-        try stdout.print("Enter ROM filename:", .{});
-
-        var input_buffer: [100]u8 = undefined;
-        var filename: []const u8 = undefined;
-
-        if (try stdin.readUntilDelimiterOrEof(input_buffer[0..], '\n')) |value| {
-            filename = std.mem.trimRight(u8, value[0 .. value.len - 1], "\r");
-            std.log.debug("Filename: {s}", .{filename});
-            try self.loadRom(filename);
-        } else {
-            std.log.debug("Error reading input.", .{});
-            return;
-        }
-    }
 
     fn loadRom(self: *Cart, filename: []const u8) !void {
         const file = try std.fs.cwd().openFile(filename, .{});
@@ -49,3 +30,9 @@ pub const Cart = struct {
         self.allocator.free(self.data);
     }
 };
+
+pub fn initCart(allocator: std.mem.Allocator, filename: []const u8) !Cart {
+    var cart = Cart{ .allocator = allocator };
+    try cart.loadRom(filename);
+    return cart;
+}
