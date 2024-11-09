@@ -3,6 +3,7 @@ const std = @import("std");
 const Cart = struct {
     allocator: std.mem.Allocator,
     data: []u8 = undefined,
+    title: []const u8 = undefined,
 
     fn loadRom(self: *Cart, filename: []const u8) !void {
         const file = try std.fs.cwd().openFile(filename, .{});
@@ -24,6 +25,8 @@ const Cart = struct {
 
             self.data[i] = buffer[0];
         }
+        const title_address = 0xA0;
+        self.title = self.data[title_address .. title_address + 12];
     }
 
     pub fn deinit(self: Cart) void {

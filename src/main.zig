@@ -22,9 +22,10 @@ fn getFilename() ![]const u8 {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const filename = try getFilename();
+    const filename = "pkmn.gba";
     var cartridge = try cart.initCart(gpa.allocator(), filename);
     defer cartridge.deinit();
 
-    std.log.debug("bytes: {}", .{cartridge.data.len});
+    std.log.debug("ROM title: {s}", .{cartridge.title});
+    std.log.debug("ROM Size (bytes): {}", .{cartridge.data.len});
 }
