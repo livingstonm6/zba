@@ -1,6 +1,7 @@
 const std = @import("std");
 
-const Cart = struct {
+// Create with initCart
+pub const Cart = struct {
     allocator: std.mem.Allocator,
     data: []u8 = undefined,
     title: []const u8 = undefined,
