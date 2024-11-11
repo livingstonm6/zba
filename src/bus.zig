@@ -1,6 +1,6 @@
 const Cart = @import("cart.zig").Cart;
 
-const MemoryBus = struct {
+pub const MemoryBus = struct {
     cart: *const Cart,
 
     pub fn read8(self: MemoryBus, address: u32) u8 {
@@ -11,13 +11,13 @@ const MemoryBus = struct {
         const lower = self.read8(address);
         const upper = self.read8(address + 1);
 
-        return lower | (upper << 8);
+        return lower | (@as(u16, upper) << 8);
     }
 
     pub fn read32(self: MemoryBus, address: u32) u32 {
         const lower = self.read16(address);
         const upper = self.read16(address + 2);
 
-        return lower | (upper << 16);
+        return lower | (@as(u32, upper) << 16);
     }
 };
