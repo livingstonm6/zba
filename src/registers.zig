@@ -1,5 +1,7 @@
 const CPUMode = @import("cpu.zig").CPUMode;
-const RegisterType = enum { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, PC, CPSR, SPSR };
+
+pub const RegisterType = enum { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, PC, CPSR, SPSR };
+pub const CPUFlagType = enum(u5) { N, Z, C, V };
 
 pub const Registers = struct {
     r0: u32 = 0,
@@ -41,7 +43,7 @@ pub const Registers = struct {
     r14_und: u32 = 0,
 
     // PC
-    r15: u32 = 0,
+    r15: u32 = 0x00000000,
 
     cpsr: u32 = 0,
     spsr_fiq: u32 = 0,
@@ -50,7 +52,29 @@ pub const Registers = struct {
     spsr_irq: u32 = 0,
     spsr_und: u32 = 0,
 
-    pub fn read(self: Registers, reg: RegisterType, mode: CPUMode) u32 {
+    pub fn getCPUMode(self: Registers) CPUMode {
+        const bits: u5 = @intCast(self.cpsr & 0b11111);
+
+        switch (bits) {
+            0b10000 => return CPUMode.USER,
+            0b10001 => return CPUMode.FIQ,
+            0b10010 => return CPUMode.IRQ,
+            0b10011 => return CPUMode.SVC,
+            0b10111 => return CPUMode.ABT,
+            0b11011 => return CPUMode.UND,
+            0b11111 => return CPUMode.USER,
+            else => unreachable,
+        }
+    }
+
+    pub fn readFlag(self: Registers, flag: CPUFlagType) bool {
+        const status_reg = self.read(RegisterType.CPSR);
+
+        return (status_reg >> (28 + @intFromEnum(flag))) == 1;
+    }
+
+    pub fn read(self: Registers, reg: RegisterType) u32 {
+        const mode = self.getCPUMode();
         switch (reg) {
             RegisterType.R0 => return self.r0,
             RegisterType.R1 => return self.r1,
@@ -105,18 +129,19 @@ pub const Registers = struct {
             RegisterType.CPSR => return self.cpsr,
             RegisterType.SPSR => {
                 switch (mode) {
-                    CPUMode.ABT => return self.cpsr_abt,
-                    CPUMode.FIQ => return self.cpsr_fiq,
-                    CPUMode.IRQ => return self.cpsr_irq,
-                    CPUMode.SVC => return self.cpsr_svc,
-                    CPUMode.UND => return self.cpsr_und,
-                    CPUMode.USER => return self.cpsr,
+                    CPUMode.ABT => return self.spsr_abt,
+                    CPUMode.FIQ => return self.spsr_fiq,
+                    CPUMode.IRQ => return self.spsr_irq,
+                    CPUMode.SVC => return self.spsr_svc,
+                    CPUMode.UND => return self.spsr_und,
+                    CPUMode.USER => unreachable,
                 }
             },
         }
     }
 
-    pub fn write(self: Registers, reg: RegisterType, mode: CPUMode, value: u32) void {
+    pub fn write(self: Registers, reg: RegisterType, value: u32) void {
+        const mode = self.getCPUMode();
         switch (reg) {
             RegisterType.R0 => self.r0 = value,
             RegisterType.R1 => self.r1 = value,
@@ -166,12 +191,12 @@ pub const Registers = struct {
             RegisterType.CPSR => self.cpsr = value,
             RegisterType.SPSR => {
                 switch (mode) {
-                    CPUMode.ABT => self.cpsr_abt = value,
-                    CPUMode.FIQ => self.cpsr_fiq = value,
-                    CPUMode.IRQ => self.cpsr_irq = value,
-                    CPUMode.SVC => self.cpsr_svc = value,
-                    CPUMode.UND => self.cpsr_und = value,
-                    CPUMode.USER => self.cpsr = value,
+                    CPUMode.ABT => self.spsr_abt = value,
+                    CPUMode.FIQ => self.spsr_fiq = value,
+                    CPUMode.IRQ => self.spsr_irq = value,
+                    CPUMode.SVC => self.spsr_svc = value,
+                    CPUMode.UND => self.spsr_und = value,
+                    CPUMode.USER => unreachable,
                 }
             },
         }
