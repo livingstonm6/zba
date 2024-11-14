@@ -3,3 +3,4 @@ zig-out
 *.gb
 *.gba
 *.sav
+*.bin
