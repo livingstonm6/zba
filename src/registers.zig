@@ -73,6 +73,19 @@ pub const Registers = struct {
         return (status_reg >> (28 + @intFromEnum(flag))) == 1;
     }
 
+    pub fn setFlags(self: *Registers, n: u8, z: u8, c: u8, v: u8) void {
+        const flags = .{ n, z, c, v };
+
+        for (flags, 0..) |flag, i| {
+            const mask: u32 = 1 << (28 + i);
+            if (flag == '1') {
+                self.cpsr |= mask;
+            } else if (flag == '0') {
+                self.cpsr &= ~mask;
+            }
+        }
+    }
+
     pub fn read(self: Registers, reg: RegisterType) u32 {
         const mode = self.getCPUMode();
         switch (reg) {
