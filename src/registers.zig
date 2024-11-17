@@ -153,7 +153,7 @@ pub const Registers = struct {
         }
     }
 
-    pub fn write(self: Registers, reg: RegisterType, value: u32) void {
+    pub fn write(self: *Registers, reg: RegisterType, value: u32) void {
         const mode = self.getCPUMode();
         switch (reg) {
             RegisterType.R0 => self.r0 = value,
@@ -168,16 +168,16 @@ pub const Registers = struct {
                 if (mode == CPUMode.FIQ) self.r8_fiq = value else self.r8 = value;
             },
             RegisterType.R9 => {
-                if (mode == CPUMode.FIQ) self.r9_fiq = value else self.r9;
+                if (mode == CPUMode.FIQ) self.r9_fiq = value else self.r9 = value;
             },
             RegisterType.R10 => {
-                if (mode == CPUMode.FIQ) self.r10_fi = value else self.r10;
+                if (mode == CPUMode.FIQ) self.r10_fiq = value else self.r10 = value;
             },
             RegisterType.R11 => {
-                if (mode == CPUMode.FIQ) self.r11_fi = value else self.r11;
+                if (mode == CPUMode.FIQ) self.r11_fiq = value else self.r11 = value;
             },
             RegisterType.R12 => {
-                if (mode == CPUMode.FIQ) self.r12_fi = value else self.r12;
+                if (mode == CPUMode.FIQ) self.r12_fiq = value else self.r12 = value;
             },
             RegisterType.R13 => {
                 switch (mode) {
