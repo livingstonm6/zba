@@ -1,3 +1,4 @@
+const std = @import("std");
 const CPUMode = @import("cpu.zig").CPUMode;
 
 pub const RegisterType = enum { R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, PC, CPSR, SPSR };
@@ -45,12 +46,39 @@ pub const Registers = struct {
     // PC
     r15: u32 = 0x00000000,
 
-    cpsr: u32 = 0,
+    cpsr: u32 = 0b10000,
     spsr_fiq: u32 = 0,
     spsr_svc: u32 = 0,
     spsr_abt: u32 = 0,
     spsr_irq: u32 = 0,
     spsr_und: u32 = 0,
+
+    pub fn print(self: Registers) void {
+        const mode = self.getCPUMode();
+        const r0 = self.read(RegisterType.R0);
+        const r1 = self.read(RegisterType.R1);
+        const r2 = self.read(RegisterType.R2);
+        const r3 = self.read(RegisterType.R3);
+        const r4 = self.read(RegisterType.R4);
+        const r5 = self.read(RegisterType.R5);
+        const r6 = self.read(RegisterType.R6);
+        const r7 = self.read(RegisterType.R7);
+        const r8 = self.read(RegisterType.R8);
+        const r9 = self.read(RegisterType.R9);
+        const r10 = self.read(RegisterType.R10);
+        const r11 = self.read(RegisterType.R11);
+        const r12 = self.read(RegisterType.R12);
+        const r13 = self.read(RegisterType.R13);
+        const r14 = self.read(RegisterType.R14);
+        const r15 = self.read(RegisterType.R15);
+        const cpsr = self.read(RegisterType.CPSR);
+
+        std.log.debug("CPU Mode: {?s}", .{std.enums.tagName(CPUMode, mode)});
+        std.log.debug(" r0: 0x{x:0>8}    r1: 0x{x:0>8}   r2: 0x{x:0>8}   r3: 0x{x:0>8}   r4: 0x{x:0>8}", .{ r0, r1, r2, r3, r4 });
+        std.log.debug(" r5: 0x{x:0>8}    r6: 0x{x:0>8}   r7: 0x{x:0>8}   r8: 0x{x:0>8}   r9: 0x{x:0>8}", .{ r5, r6, r7, r8, r9 });
+        std.log.debug("r10: 0x{x:0>8}   r11: 0x{x:0>8}  r12: 0x{x:0>8}  r13: 0x{x:0>8}  r14: 0x{x:0>8}", .{ r10, r11, r12, r13, r14 });
+        std.log.debug("r15: 0x{x:0>8}  CPSR: 0x{x:0>8}\n", .{ r15, cpsr });
+    }
 
     pub fn getCPUMode(self: Registers) CPUMode {
         const bits: u5 = @intCast(self.cpsr & 0b11111);
