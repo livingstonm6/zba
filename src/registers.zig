@@ -102,10 +102,11 @@ pub const Registers = struct {
     }
 
     pub fn setFlags(self: *Registers, n: u8, z: u8, c: u8, v: u8) void {
-        const flags = .{ n, z, c, v };
+        const flags: [4]u8 = .{ n, z, c, v };
 
         for (flags, 0..) |flag, i| {
-            const mask: u32 = 1 << (28 + i);
+            const i_u5: u5 = @intCast(i);
+            const mask: u32 = @as(u32, 1) << (28 + i_u5);
             if (flag == '1') {
                 self.cpsr |= mask;
             } else if (flag == '0') {
