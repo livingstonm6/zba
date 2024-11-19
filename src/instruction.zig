@@ -29,3 +29,33 @@ pub const Instruction = struct {
         }
     }
 };
+
+fn branch(self: *Instruction, state: *CPUState) void {
+    std.log.debug("Executing Branch instruction\n", .{});
+    var link = false;
+    if ((self.opcode >> 24) & 1 == 1) link = true;
+
+    std.log.debug("Link: {}", .{link});
+
+    if (link) state.reg.write(RegisterType.R14, state.reg.r15);
+
+    const offset: i24 = @intCast(self.opcode & 0xFFFFFF);
+    const sub = offset < 0;
+    const mask: u32 = 1 << 31;
+    const offset_magnitude: u32 = @as(u32, @intCast(offset << 2)) & ~mask;
+
+    if (sub) state.reg.r15 -= offset_magnitude else state.reg.r15 += offset_magnitude;
+}
+
+pub fn decodeOpcode(opcode: u32) Instruction {
+    var inst = Instruction{ .opcode = opcode };
+
+    if (((opcode >> 25) & 0b111) == 0b101) {
+        inst.execute = branch;
+    } else {
+        std.log.debug("ERROR: Unrecognized opcode", .{});
+        unreachable;
+    }
+
+    return inst;
+}
