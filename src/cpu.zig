@@ -1,6 +1,7 @@
 const std = @import("std");
 const MemoryBus = @import("bus.zig").MemoryBus;
 const Registers = @import("registers.zig").Registers;
+const decodeOpcode = @import("instruction.zig").decodeOpcode;
 
 pub const CPUMode = enum { USER, FIQ, SVC, ABT, IRQ, UND };
 
@@ -16,13 +17,15 @@ pub const CPU = struct {
     state: CPUState = CPUState{},
 
     pub fn step(self: *CPU) void {
-        std.log.debug("CPU STEP PC: {}", .{self.state.reg.r15});
+        std.log.debug("CPU STEP PC: 0x{x}", .{self.state.reg.r15});
 
-        // Fetch opcode
         self.state.opcode = self.bus.read32(self.state.reg.r15);
-        std.log.debug("Opcode: {b}", .{self.state.opcode});
+        self.state.reg.r15 += 4;
+        std.log.debug("Opcode: {b} ({x})", .{ self.state.opcode, self.state.opcode });
 
-        // TODO Execute instruction
-        self.running = false;
+        var instruction = decodeOpcode(self.state.opcode);
+        if (instruction.checkCondition(&self.state)) instruction.execute(&instruction, &self.state) else std.log.debug("Condition failed", .{});
+
+        self.state.reg.print();
     }
 };
