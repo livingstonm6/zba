@@ -17,11 +17,11 @@ pub const CPU = struct {
     state: CPUState = CPUState{},
 
     pub fn step(self: *CPU) void {
-        std.log.debug("CPU STEP PC: 0x{x}", .{self.state.reg.r15});
+        std.log.debug("CPU STEP PC: 0x{x:0>8}", .{self.state.reg.r15});
 
         self.state.opcode = self.bus.read32(self.state.reg.r15);
         self.state.reg.r15 += 4;
-        std.log.debug("Opcode: {b} ({x})", .{ self.state.opcode, self.state.opcode });
+        std.log.debug("Opcode: {b} (0x{x:0>8})", .{ self.state.opcode, self.state.opcode });
 
         var instruction = decodeOpcode(self.state.opcode);
         if (instruction.checkCondition(&self.state)) instruction.execute(&instruction, &self.state) else std.log.debug("Condition failed", .{});
