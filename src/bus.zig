@@ -52,6 +52,23 @@ pub const MemoryBus = struct {
 
         return lower | (@as(u32, upper) << 16);
     }
+
+    pub fn write8(self: MemoryBus, address: u32, value: u8) void {
+        if (address < 0x05000000) {
+            self.ram[address] = value;
+        }
+        unreachable;
+    }
+
+    pub fn write16(self: MemoryBus, address: u32, value: u16) void {
+        self.write8(address, @intCast(value & 0xFF));
+        self.write8(address + 1, @intCast((value >> 8) & 0xFF));
+    }
+
+    pub fn write32(self: MemoryBus, address: u32, value: u32) void {
+        self.write16(address, @intCast(value & 0xFFFF));
+        self.write16(address + 2, @intCast((value >> 16) & 0xFFFF));
+    }
 };
 
 pub fn createBus(cart: *const Cart, allocator: std.mem.Allocator) !MemoryBus {
