@@ -7,12 +7,12 @@ pub const MemoryBus = struct {
     ram: []u8 = undefined,
 
     pub fn init(self: *MemoryBus) !void {
+        self.ram = try self.allocator.alloc(u8, 0x05000000);
+
         const bios = try std.fs.cwd().openFile("bios.bin", .{});
         defer bios.close();
 
         const file_size = try bios.getEndPos();
-        self.ram = try self.allocator.alloc(u8, file_size);
-
         var buffered_bios = std.io.bufferedReader(bios.reader());
         var buffer: [1]u8 = undefined;
 
