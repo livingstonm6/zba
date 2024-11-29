@@ -227,26 +227,30 @@ fn dataProc(self: *Instruction, state: *CPUState) void {
             overflow = temp[1];
         },
         0b1000 => {
-            std.log.debug("AND No Write", .{});
+            if (!set_flags) {
+                // MRS
+            }
+
+            std.log.debug("TST (AND No Write)", .{});
             result = operand1 & operand2;
             logical = true;
             write = false;
         },
         0b1001 => {
-            std.log.debug("OR No Write", .{});
+            std.log.debug("TEQ (EOR No Write)", .{});
             result = operand1 ^ operand2;
             logical = true;
             write = false;
         },
         0b1010 => {
-            std.log.debug("SUB No Write", .{});
+            std.log.debug("CMP (SUB No Write)", .{});
             const temp = @subWithOverflow(operand1, operand2);
             result = temp[0];
             overflow = temp[1];
             write = false;
         },
         0b1011 => {
-            std.log.debug("ADD No Write", .{});
+            std.log.debug("CMN (ADD No Write)", .{});
             const temp = @addWithOverflow(operand1, operand2);
             result = temp[0];
             overflow = temp[1];
@@ -291,6 +295,66 @@ fn dataProc(self: *Instruction, state: *CPUState) void {
     }
 }
 
+fn singleDataTransfer(self: *Instruction, state: *CPUState) void {
+    std.log.debug("Single data transfer", .{});
+    const immediate_offset = (self.opcode >> 25) & 1 == 1;
+    const pre_indexing = (self.opcode >> 24) & 1 == 1;
+    const up = (self.opcode >> 23) & 1 == 1;
+    const byte = (self.opcode >> 22) & 1 == 1;
+    const write_back = (self.opcode >> 21) & 1 == 1;
+    const load = (self.opcode >> 20) & 1 == 1;
+    std.log.debug("Immediate offset: {}", .{immediate_offset});
+    std.log.debug("Pre-indexing: {}", .{pre_indexing});
+    std.log.debug("Up: {}", .{up});
+    std.log.debug("Byte: {}", .{byte});
+    std.log.debug("Write back: {}", .{write_back});
+    std.log.debug("Load: {}", .{load});
+
+    const rn: RegisterType = @enumFromInt((self.opcode >> 16) & 0b1111);
+    const rd: RegisterType = @enumFromInt((self.opcode >> 12) & 0b1111);
+    std.log.debug("Rn: {?s}", .{std.enums.tagName(RegisterType, rn)});
+    std.log.debug("Rd: {?s}", .{std.enums.tagName(RegisterType, rd)});
+
+    var offset: u32 = undefined;
+
+    if (immediate_offset) {
+        offset = self.opcode & 0xFFF;
+    } else {
+        const rm: RegisterType = @enumFromInt(self.opcode & 0b1111);
+        const rm_value = state.reg.read(rm);
+        const shift: u8 = @intCast((self.opcode >> 4) & 0xFF);
+        var carry: u8 = 0;
+        offset = barrelShift(rm_value, shift, state, &carry);
+    }
+
+    std.log.debug("Offset: 0x{x:0>8}", .{offset});
+
+    const base = state.reg.read(rn);
+
+    var address = if (!pre_indexing) base else if (up) base + offset else base - offset;
+
+    std.log.debug("Address: 0x{x:0>8}", .{address});
+    // Transfer
+    if (load) {
+        const value: u32 = if (byte) @intCast(state.bus.read8(address)) else state.bus.read32(address);
+        state.reg.write(rd, value);
+    } else {
+        var value = state.reg.read(rd);
+        if (byte) {
+            value &= 0xFF;
+            value |= (value << 8);
+            value |= (value << 16);
+        }
+
+        state.bus.write32(address, value);
+    }
+
+    if (!pre_indexing) {
+        if (up) address += offset else address -= offset;
+    }
+    if (write_back) state.reg.write(rn, address);
+}
+
 pub fn decodeOpcode(opcode: u32) Instruction {
     var inst = Instruction{ .opcode = opcode };
 
@@ -299,9 +363,12 @@ pub fn decodeOpcode(opcode: u32) Instruction {
     } else if (((opcode >> 25) & 0b111) == 0b001) {
         // Data processing with immediate
         inst.execute = dataProc;
+    } else if (((opcode >> 26) & 0b11 == 1) and ((opcode >> 4) & 1 != 1)) {
+        inst.execute = singleDataTransfer;
     } else {
         std.log.debug("ERROR: Unrecognized opcode", .{});
         unreachable;
     }
+
     return inst;
 }
