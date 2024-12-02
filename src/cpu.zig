@@ -30,7 +30,7 @@ pub const CPU = struct {
     }
 };
 
-pub fn initCPU(bus: *const MemoryBus) CPU {
+pub fn createCPU(bus: *const MemoryBus) CPU {
     var cpu = CPU{};
     cpu.state.bus = bus;
     return cpu;

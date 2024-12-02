@@ -35,7 +35,7 @@ pub const Cart = struct {
     }
 };
 
-pub fn initCart(allocator: std.mem.Allocator, filename: []const u8) !Cart {
+pub fn createCart(allocator: std.mem.Allocator, filename: []const u8) !Cart {
     var cart = Cart{ .allocator = allocator };
     try cart.loadRom(filename);
     return cart;
